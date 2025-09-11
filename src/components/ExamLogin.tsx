@@ -1,28 +1,42 @@
 import { useState, useCallback } from "react";
-import { Eye, EyeOff, UserCheck } from "lucide-react";
+import { Eye, EyeOff, GraduationCap, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ExamTimer } from "@/components/ExamTimer";
+import { ExamDetails } from "@/components/ExamDetails";
+import { DeviceAccess } from "@/components/DeviceAccess";
 import { useToast } from "@/hooks/use-toast";
 import academicBackground from "@/assets/academic-background.jpg";
+
+type PermissionStatus = "not-requested" | "granted" | "denied" | "requesting";
 
 export const ExamLogin = () => {
   const [userCode, setUserCode] = useState("");
   const [passcode, setPasscode] = useState("");
   const [showPasscode, setShowPasscode] = useState(false);
-  const [isExamEnabled, setIsExamEnabled] = useState(false);
+  const [isTimerComplete, setIsTimerComplete] = useState(false);
+  const [cameraPermission, setCameraPermission] = useState<PermissionStatus>("not-requested");
+  const [micPermission, setMicPermission] = useState<PermissionStatus>("not-requested");
   const { toast } = useToast();
 
   const handleTimeUp = useCallback(() => {
-    setIsExamEnabled(true);
+    setIsTimerComplete(true);
     toast({
-      title: "Exam Available",
-      description: "You can now start your exam. Please enter your credentials.",
+      title: "Timer Complete",
+      description: "Time is up! Ensure camera and microphone permissions are granted to start.",
       variant: "default",
     });
   }, [toast]);
+
+  const handlePermissionChange = useCallback((camera: PermissionStatus, microphone: PermissionStatus) => {
+    setCameraPermission(camera);
+    setMicPermission(microphone);
+  }, []);
+
+  // Check if all conditions are met to enable exam start
+  const isExamEnabled = isTimerComplete && cameraPermission === "granted" && micPermission === "granted";
 
   const handleStartExam = () => {
     if (!userCode.trim() || !passcode.trim()) {
@@ -34,10 +48,19 @@ export const ExamLogin = () => {
       return;
     }
 
+    if (!isExamEnabled) {
+      toast({
+        title: "Requirements Not Met",
+        description: "Please wait for the timer and ensure all permissions are granted.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Mock exam start - in real app, this would validate credentials and navigate
     toast({
       title: "Starting Exam",
-      description: "Redirecting to exam dashboard...",
+      description: "Launching secure exam environment...",
       variant: "default",
     });
     
@@ -55,18 +78,22 @@ export const ExamLogin = () => {
     <div 
       className="min-h-screen flex items-center justify-center p-4 bg-cover bg-center bg-no-repeat"
       style={{ 
-        backgroundImage: `linear-gradient(rgba(220, 230, 240, 0.8), rgba(220, 230, 240, 0.8)), url(${academicBackground})` 
+        backgroundImage: `linear-gradient(rgba(220, 230, 240, 0.85), rgba(220, 230, 240, 0.85)), url(${academicBackground})` 
       }}
     >
-      <Card className="w-full max-w-md shadow-lg border-0 backdrop-blur-sm bg-card/95">
-        <CardHeader className="text-center space-y-2 pb-6">
+      <Card className="w-full max-w-lg shadow-xl border-0 backdrop-blur-sm bg-card/95">
+        <CardHeader className="text-center space-y-2 pb-4">
           <CardTitle className="text-2xl font-bold text-primary flex items-center justify-center gap-2">
-            <UserCheck className="h-6 w-6" />
-            Enter Exam Credentials
+            <GraduationCap className="h-6 w-6" />
+            Prepare for Your Exam
           </CardTitle>
         </CardHeader>
         
         <CardContent className="space-y-6">
+          {/* Exam Details Section */}
+          <ExamDetails />
+
+          {/* Credential Inputs */}
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="userCode" className="text-sm font-medium">
@@ -75,7 +102,7 @@ export const ExamLogin = () => {
               <Input
                 id="userCode"
                 type="text"
-                placeholder="Enter your User Code"
+                placeholder="Enter User Code"
                 value={userCode}
                 onChange={(e) => setUserCode(e.target.value)}
                 className="transition-all duration-200 focus:ring-2 focus:ring-primary/20"
@@ -113,12 +140,17 @@ export const ExamLogin = () => {
             </div>
           </div>
 
+          {/* Device Access Section */}
+          <DeviceAccess onPermissionChange={handlePermissionChange} />
+
+          {/* Timer Section */}
           <ExamTimer 
             initialMinutes={5}
             onTimeUp={handleTimeUp}
             className="py-4"
           />
 
+          {/* Start Exam Button */}
           <Button
             onClick={handleStartExam}
             disabled={!isExamEnabled}
@@ -127,12 +159,16 @@ export const ExamLogin = () => {
                 ? "bg-success hover:bg-success/90 text-success-foreground animate-pulse-glow"
                 : "bg-muted text-muted-foreground cursor-not-allowed opacity-60"
             }`}
+            title={!isExamEnabled ? "Complete timer and grant all permissions to start exam" : ""}
           >
-            {isExamEnabled ? "Start Exam Now" : "Waiting for Exam Time"}
+            <div className="flex items-center gap-2">
+              {isExamEnabled && <CheckCircle className="h-5 w-5" />}
+              {isExamEnabled ? "✅ Start Exam Now" : "Waiting for Requirements"}
+            </div>
           </Button>
 
-          <p className="text-xs text-center text-muted-foreground mt-4">
-            Please ensure you have a stable internet connection before starting your exam.
+          <p className="text-xs text-center text-muted-foreground">
+            Ensure stable internet connection and complete all requirements above to start your exam.
           </p>
         </CardContent>
       </Card>
