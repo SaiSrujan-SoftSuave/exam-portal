@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Info } from "lucide-react";
+import { Info, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 
 interface ExamDetailsProps {
@@ -24,68 +24,70 @@ export const ExamDetails = ({
     "Read all questions carefully before answering"
   ]
 }: ExamDetailsProps) => {
-  const [isOpen, setIsOpen] = useState(false);
-
   return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <CollapsibleTrigger asChild>
+    <Dialog>
+      <DialogTrigger asChild>
         <Button
           variant="ghost"
-          className="w-full justify-between p-4 h-auto bg-muted/20 hover:bg-muted/40 transition-all duration-200"
+          className="w-full justify-center p-3 h-auto bg-muted/20 hover:bg-muted/40 transition-all duration-200"
         >
           <div className="flex items-center gap-2 text-sm font-medium">
             <Info className="h-4 w-4 text-primary" />
-            Click to View Exam Details
+            View Exam Details
           </div>
-          {isOpen ? (
-            <ChevronUp className="h-4 w-4 text-muted-foreground" />
-          ) : (
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-          )}
         </Button>
-      </CollapsibleTrigger>
+      </DialogTrigger>
       
-      <CollapsibleContent className="mt-2">
-        <Card className="border-primary/20 bg-background/50">
-          <CardContent className="p-4 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h4 className="font-semibold text-sm text-primary mb-1">Exam Title</h4>
-                <p className="text-sm text-foreground">{examTitle}</p>
-              </div>
-              
-              <div>
-                <h4 className="font-semibold text-sm text-primary mb-1">Duration</h4>
-                <p className="text-sm text-foreground">{duration}</p>
-              </div>
-              
-              <div>
-                <h4 className="font-semibold text-sm text-primary mb-1">Questions</h4>
-                <p className="text-sm text-foreground">{questionCount} questions</p>
-              </div>
-              
-              <div>
-                <h4 className="font-semibold text-sm text-primary mb-1">Allowed Resources</h4>
-                <p className="text-sm text-foreground">
-                  {allowedResources.length > 0 ? allowedResources.join(", ") : "None"}
-                </p>
-              </div>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Info className="h-5 w-5 text-primary" />
+            Exam Information
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <h4 className="font-semibold text-sm text-primary">Exam Title</h4>
+              <p className="text-sm text-foreground bg-muted/30 p-2 rounded">{examTitle}</p>
             </div>
             
-            <div>
-              <h4 className="font-semibold text-sm text-primary mb-2">Instructions</h4>
-              <ul className="space-y-1">
-                {instructions.map((instruction, index) => (
-                  <li key={index} className="text-xs text-muted-foreground flex items-start gap-2">
-                    <span className="text-primary mt-1">•</span>
-                    <span>{instruction}</span>
-                  </li>
-                ))}
-              </ul>
+            <div className="space-y-2">
+              <h4 className="font-semibold text-sm text-primary">Duration</h4>
+              <p className="text-sm text-foreground bg-muted/30 p-2 rounded">{duration}</p>
             </div>
-          </CardContent>
-        </Card>
-      </CollapsibleContent>
-    </Collapsible>
+            
+            <div className="space-y-2">
+              <h4 className="font-semibold text-sm text-primary">Questions</h4>
+              <p className="text-sm text-foreground bg-muted/30 p-2 rounded">{questionCount} questions</p>
+            </div>
+            
+            <div className="space-y-2">
+              <h4 className="font-semibold text-sm text-primary">Allowed Resources</h4>
+              <p className="text-sm text-foreground bg-muted/30 p-2 rounded">
+                {allowedResources.length > 0 ? allowedResources.join(", ") : "None"}
+              </p>
+            </div>
+          </div>
+          
+          <div className="space-y-3">
+            <h4 className="font-semibold text-sm text-primary">Instructions</h4>
+            <Card className="border-primary/20 bg-muted/10">
+              <CardContent className="p-4">
+                <ul className="space-y-2">
+                  {instructions.map((instruction, index) => (
+                    <li key={index} className="text-sm text-foreground flex items-start gap-3">
+                      <span className="text-primary font-bold mt-0.5">{index + 1}.</span>
+                      <span>{instruction}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };

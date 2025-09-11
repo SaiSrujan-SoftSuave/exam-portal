@@ -103,24 +103,24 @@ export const DeviceAccess = ({ onPermissionChange }: DeviceAccessProps) => {
 
   return (
     <Card className="border-warning/20 bg-warning/5">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base font-semibold flex items-center gap-2">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-semibold flex items-center gap-2">
           <span className="text-warning">🔒</span>
           Required for Proctoring
         </CardTitle>
       </CardHeader>
       
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3">
         {/* Camera Permission */}
-        <div className="flex items-center justify-between p-3 rounded-lg bg-background/50 border border-border/50">
-          <div className="flex items-center gap-3">
-            <Camera className="h-5 w-5 text-primary" />
+        <div className="flex items-center justify-between p-2 rounded bg-background/50 border border-border/50">
+          <div className="flex items-center gap-2">
+            <Camera className="h-4 w-4 text-primary" />
             <div>
-              <p className="font-medium text-sm">Camera Access</p>
-              <div className="flex items-center gap-2 mt-1">
+              <p className="font-medium text-xs">Camera</p>
+              <div className="flex items-center gap-1">
                 {getStatusIcon(cameraStatus)}
                 <span className={`text-xs ${getStatusColor(cameraStatus)}`}>
-                  Status: {getStatusText(cameraStatus)}
+                  {getStatusText(cameraStatus)}
                 </span>
               </div>
             </div>
@@ -131,9 +131,9 @@ export const DeviceAccess = ({ onPermissionChange }: DeviceAccessProps) => {
               onClick={requestCameraAccess}
               size="sm"
               variant="outline"
-              className="text-xs"
+              className="text-xs h-7 px-2"
             >
-              Request Access
+              Allow
             </Button>
           )}
           
@@ -142,7 +142,7 @@ export const DeviceAccess = ({ onPermissionChange }: DeviceAccessProps) => {
               onClick={requestCameraAccess}
               size="sm"
               variant="outline"
-              className="text-xs"
+              className="text-xs h-7 px-2"
             >
               Retry
             </Button>
@@ -150,15 +150,15 @@ export const DeviceAccess = ({ onPermissionChange }: DeviceAccessProps) => {
         </div>
 
         {/* Microphone Permission */}
-        <div className="flex items-center justify-between p-3 rounded-lg bg-background/50 border border-border/50">
-          <div className="flex items-center gap-3">
-            <Mic className="h-5 w-5 text-primary" />
+        <div className="flex items-center justify-between p-2 rounded bg-background/50 border border-border/50">
+          <div className="flex items-center gap-2">
+            <Mic className="h-4 w-4 text-primary" />
             <div>
-              <p className="font-medium text-sm">Microphone Access</p>
-              <div className="flex items-center gap-2 mt-1">
+              <p className="font-medium text-xs">Microphone</p>
+              <div className="flex items-center gap-1">
                 {getStatusIcon(micStatus)}
                 <span className={`text-xs ${getStatusColor(micStatus)}`}>
-                  Status: {getStatusText(micStatus)}
+                  {getStatusText(micStatus)}
                 </span>
               </div>
             </div>
@@ -169,9 +169,9 @@ export const DeviceAccess = ({ onPermissionChange }: DeviceAccessProps) => {
               onClick={requestMicAccess}
               size="sm"
               variant="outline"
-              className="text-xs"
+              className="text-xs h-7 px-2"
             >
-              Request Access
+              Allow
             </Button>
           )}
           
@@ -180,7 +180,7 @@ export const DeviceAccess = ({ onPermissionChange }: DeviceAccessProps) => {
               onClick={requestMicAccess}
               size="sm"
               variant="outline"
-              className="text-xs"
+              className="text-xs h-7 px-2"
             >
               Retry
             </Button>
@@ -189,7 +189,7 @@ export const DeviceAccess = ({ onPermissionChange }: DeviceAccessProps) => {
 
         {(cameraStatus === "denied" || micStatus === "denied") && (
           <p className="text-xs text-destructive text-center bg-destructive/10 p-2 rounded border border-destructive/20">
-            ⚠️ You must allow camera & microphone access to start the exam
+            ⚠️ Camera & microphone access required
           </p>
         )}
       </CardContent>
