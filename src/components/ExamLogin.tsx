@@ -59,6 +59,21 @@ export const ExamLogin = () => {
       return;
     }
 
+    const requestFullscreen = () => {
+      const element = document.documentElement as any;
+      if (element.requestFullscreen) {
+        element.requestFullscreen();
+      } else if (element.mozRequestFullScreen) { /* Firefox */
+        element.mozRequestFullScreen();
+      } else if (element.webkitRequestFullscreen) { /* Chrome, Safari and Opera */
+        element.webkitRequestFullscreen();
+      } else if (element.msRequestFullscreen) { /* IE/Edge */
+        element.msRequestFullscreen();
+      }
+    };
+
+    requestFullscreen();
+
     // Mock exam start - in real app, this would validate credentials and navigate
     toast({
       title: "Starting Exam",

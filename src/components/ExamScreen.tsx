@@ -9,8 +9,11 @@ import { useExamState } from '@/hooks/useExamState';
 import { examQuestions } from '@/data/questions';
 import { CameraPreview } from '@/components/CameraPreview';
 
+import { FullscreenExitModal } from '@/components/FullscreenExitModal';
+
 export const ExamScreen: React.FC = () => {
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
+  const [showFullscreenExitModal, setShowFullscreenExitModal] = useState(false);
   const [isNavigatorCollapsed, setIsNavigatorCollapsed] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [examCompleted, setExamCompleted] = useState(false);
@@ -18,7 +21,6 @@ export const ExamScreen: React.FC = () => {
   
   const totalQuestions = examQuestions.length;
 
-  // Handle time up
   const handleTimeUp = useCallback(() => {
     setCompletionReason('timeUp');
     setExamCompleted(true);
@@ -37,7 +39,6 @@ export const ExamScreen: React.FC = () => {
     canGoNext,
   } = useExamState(totalQuestions);
 
-  // Handle responsive behavior
   useEffect(() => {
     const checkMobile = () => {
       const mobile = window.innerWidth < 1024;
@@ -50,7 +51,20 @@ export const ExamScreen: React.FC = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Handle keyboard shortcuts
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      if (!document.fullscreenElement) {
+        setShowFullscreenExitModal(true);
+      }
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'ArrowLeft' && examState.currentQuestion > 1) {
@@ -74,6 +88,24 @@ export const ExamScreen: React.FC = () => {
     setShowSubmissionModal(true);
   };
 
+  useEffect(() => {
+    const handlePopState = () => {
+      setShowSubmissionModal(true);
+    };
+
+    window.history.pushState(null, '', window.location.href);
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
+
+  const handleCloseModal = () => {
+    setShowSubmissionModal(false);
+    window.history.pushState(null, '', window.location.href);
+  };
+
   const confirmSubmit = () => {
     stopTimer();
     submitExam();
@@ -82,8 +114,13 @@ export const ExamScreen: React.FC = () => {
     setShowSubmissionModal(false);
   };
 
+  const handleReEnterFullscreen = () => {
+    document.documentElement.requestFullscreen();
+    setShowFullscreenExitModal(false);
+  };
+
   const calculateTimeTaken = () => {
-    const initialTime = 25 * 60; // 25 minutes in seconds
+    const initialTime = 25 * 60;
     const currentTime = timer.minutes * 60 + timer.seconds;
     const elapsed = initialTime - currentTime;
     const minutes = Math.floor(elapsed / 60);
@@ -104,9 +141,7 @@ export const ExamScreen: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col lg:flex-row">
-      {/* Main Question Area */}
       <div className="flex-1 lg:w-3/5 bg-white flex flex-col min-h-screen lg:min-h-0">
-        {/* Sticky Header */}
         <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-500">
@@ -132,7 +167,6 @@ export const ExamScreen: React.FC = () => {
         />
       </div>
 
-      {/* Question Navigator */}
       <div className="lg:w-2/5 lg:max-w-md">
         <QuestionNavigator
           totalQuestions={totalQuestions}
@@ -146,14 +180,20 @@ export const ExamScreen: React.FC = () => {
         />
       </div>
 
-      {/* Submission Modal */}
       <SubmissionModal
         isOpen={showSubmissionModal}
-        onClose={() => setShowSubmissionModal(false)}
+        onClose={handleCloseModal}
         onConfirm={confirmSubmit}
         answeredCount={answeredQuestions.size}
         totalQuestions={totalQuestions}
       />
+
+      <FullscreenExitModal
+        isOpen={showFullscreenExitModal}
+        onConfirm={confirmSubmit}
+        onCancel={handleReEnterFullscreen}
+      />
+
       <CameraPreview />
     </div>
   );
