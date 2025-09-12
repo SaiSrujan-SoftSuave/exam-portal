@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, GraduationCap, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +14,7 @@ import academicBackground from "@/assets/academic-background.jpg";
 type PermissionStatus = "not-requested" | "granted" | "denied" | "requesting";
 
 export const ExamLogin = () => {
+  const navigate = useNavigate();
   const [userCode, setUserCode] = useState("");
   const [passcode, setPasscode] = useState("");
   const [showPasscode, setShowPasscode] = useState(false);
@@ -66,7 +68,7 @@ export const ExamLogin = () => {
     
     // Simulate navigation delay
     setTimeout(() => {
-      console.log("Navigate to exam dashboard");
+      navigate("/exam");
     }, 1500);
   };
 
@@ -145,7 +147,7 @@ export const ExamLogin = () => {
 
           {/* Timer Section */}
           <ExamTimer 
-            initialMinutes={5}
+            initialMinutes={0.1}
             onTimeUp={handleTimeUp}
             className="py-4"
           />
