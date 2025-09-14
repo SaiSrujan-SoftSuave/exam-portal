@@ -4,6 +4,7 @@ import { Question } from '@/types/exam';
 
 interface QuestionAreaProps {
   question: Question;
+  questionNumber: number;
   selectedAnswer?: string;
   onAnswerSelect: (optionId: string) => void;
   canGoNext: boolean;
@@ -16,6 +17,7 @@ interface QuestionAreaProps {
 
 export const QuestionArea: React.FC<QuestionAreaProps> = ({
   question,
+  questionNumber,
   selectedAnswer,
   onAnswerSelect,
   canGoNext,
@@ -31,7 +33,7 @@ export const QuestionArea: React.FC<QuestionAreaProps> = ({
       <div className="flex-1 p-6 overflow-y-auto">
         <div className="max-w-4xl">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6 leading-relaxed">
-            Q{question.id}. {question.question}
+            Q{questionNumber}. {question.question}
           </h2>
           
           <div 

@@ -1,11 +1,13 @@
 import React from 'react';
-import { CheckCircle, Clock, FileText } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { CheckCircle, Clock, FileText, ArrowRight } from 'lucide-react';
 
 interface ExamCompleteProps {
   answeredCount: number;
   totalQuestions: number;
   timeTaken: string;
   reason: 'submitted' | 'timeUp';
+  allowSecondRound?: boolean;
 }
 
 export const ExamComplete: React.FC<ExamCompleteProps> = ({
@@ -13,8 +15,14 @@ export const ExamComplete: React.FC<ExamCompleteProps> = ({
   totalQuestions,
   timeTaken,
   reason,
+  allowSecondRound = false,
 }) => {
+  const navigate = useNavigate();
   const percentage = Math.round((answeredCount / totalQuestions) * 100);
+
+  const handleStartRound2 = () => {
+    navigate('/round2');
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
@@ -65,6 +73,19 @@ export const ExamComplete: React.FC<ExamCompleteProps> = ({
             </div>
           </div>
         </div>
+
+        {allowSecondRound && (
+          <div className="mb-6">
+            <p className="text-green-600 font-semibold mb-4">Congratulations! You have qualified for the second round.</p>
+            <button
+              onClick={handleStartRound2}
+              className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-300 bg-blue-600 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500"
+            >
+              <span>Start Second Round</span>
+              <ArrowRight size={20} />
+            </button>
+          </div>
+        )}
 
         <div className="text-sm text-gray-500 leading-relaxed">
           Your responses have been saved. Results will be available after the exam period ends.

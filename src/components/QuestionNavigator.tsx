@@ -1,19 +1,20 @@
 import React from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import { Question } from '@/types/exam';
 
 interface QuestionNavigatorProps {
-  totalQuestions: number;
-  currentQuestion: number;
+  questions: Question[];
+  currentQuestion: number | null;
   answeredQuestions: Set<number>;
   visitedQuestions: Set<number>;
-  onQuestionSelect: (questionNumber: number) => void;
+  onQuestionSelect: (questionId: number) => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
   isMobile?: boolean;
 }
 
 export const QuestionNavigator: React.FC<QuestionNavigatorProps> = ({
-  totalQuestions,
+  questions,
   currentQuestion,
   answeredQuestions,
   visitedQuestions,
@@ -22,9 +23,9 @@ export const QuestionNavigator: React.FC<QuestionNavigatorProps> = ({
   onToggleCollapse,
   isMobile = false,
 }) => {
-  const getQuestionStatus = (questionNumber: number) => {
-    if (answeredQuestions.has(questionNumber)) return 'answered';
-    if (visitedQuestions.has(questionNumber)) return 'visited';
+  const getQuestionStatus = (questionId: number) => {
+    if (answeredQuestions.has(questionId)) return 'answered';
+    if (visitedQuestions.has(questionId)) return 'visited';
     return 'unvisited';
   };
 
@@ -81,15 +82,15 @@ export const QuestionNavigator: React.FC<QuestionNavigatorProps> = ({
         )}
         
         <div className="grid grid-cols-5 gap-2">
-          {Array.from({ length: totalQuestions }, (_, index) => {
+          {questions.map((question, index) => {
             const questionNumber = index + 1;
-            const status = getQuestionStatus(questionNumber);
-            const isActive = questionNumber === currentQuestion;
+            const status = getQuestionStatus(question.id);
+            const isActive = question.id === currentQuestion;
             
             return (
               <button
-                key={questionNumber}
-                onClick={() => onQuestionSelect(questionNumber)}
+                key={question.id}
+                onClick={() => onQuestionSelect(question.id)}
                 className={`
                   w-10 h-10 rounded-full border-2 text-sm font-medium transition-all duration-200
                   focus:ring-2 focus:ring-blue-500 focus:ring-offset-2

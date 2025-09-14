@@ -1,11 +1,11 @@
 import { useState, useCallback } from 'react';
-import { ExamState, Answer } from '@/types/exam';
+import { ExamState } from '@/types/exam';
 
-export const useExamState = (totalQuestions: number) => {
+export const useExamState = () => {
   const [examState, setExamState] = useState<ExamState>({
-    currentQuestion: 1,
+    currentQuestion: null,
     answers: {},
-    visitedQuestions: new Set([1]),
+    visitedQuestions: new Set(),
     isSubmitted: false,
   });
 
@@ -24,15 +24,17 @@ export const useExamState = (totalQuestions: number) => {
     }));
   }, []);
 
-  const goToNext = useCallback(() => {
-    if (examState.currentQuestion < totalQuestions) {
-      navigateToQuestion(examState.currentQuestion + 1);
+  const goToNext = useCallback((questionIds: number[]) => {
+    const currentIndex = questionIds.findIndex(id => id === examState.currentQuestion);
+    if (currentIndex < questionIds.length - 1) {
+      navigateToQuestion(questionIds[currentIndex + 1]);
     }
-  }, [examState.currentQuestion, totalQuestions, navigateToQuestion]);
+  }, [examState.currentQuestion, navigateToQuestion]);
 
-  const goToPrevious = useCallback(() => {
-    if (examState.currentQuestion > 1) {
-      navigateToQuestion(examState.currentQuestion - 1);
+  const goToPrevious = useCallback((questionIds: number[]) => {
+    const currentIndex = questionIds.findIndex(id => id === examState.currentQuestion);
+    if (currentIndex > 0) {
+      navigateToQuestion(questionIds[currentIndex - 1]);
     }
   }, [examState.currentQuestion, navigateToQuestion]);
 
@@ -45,6 +47,7 @@ export const useExamState = (totalQuestions: number) => {
   }, [examState.answers]);
 
   const canGoNext = useCallback(() => {
+    if (examState.currentQuestion === null) return false;
     return isQuestionAnswered(examState.currentQuestion);
   }, [examState.currentQuestion, isQuestionAnswered]);
 

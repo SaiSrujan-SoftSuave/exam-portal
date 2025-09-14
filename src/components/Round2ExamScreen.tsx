@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
 import { Round2Timer } from './Round2Timer';
 import { QuestionPanel } from './QuestionPanel';
@@ -8,6 +8,7 @@ import { useRound2ExamState } from '../hooks/useRound2ExamState';
 import { codingQuestions, sqlQuestion } from '../data/round2Questions';
 import { TestResult } from '../types/round2';
 import { Button } from '@/components/ui/button';
+import { executeCode } from '@/lib/api';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,6 +22,23 @@ import {
 
 export const Round2ExamScreen: React.FC = () => {
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
+
+  useEffect(() => {
+    const requestFullscreen = () => {
+      const element = document.documentElement as any;
+      if (element.requestFullscreen) {
+        element.requestFullscreen();
+      } else if (element.mozRequestFullScreen) { /* Firefox */
+        element.mozRequestFullScreen();
+      } else if (element.webkitRequestFullscreen) { /* Chrome, Safari and Opera */
+        element.webkitRequestFullscreen();
+      } else if (element.msRequestFullscreen) { /* IE/Edge */
+        element.msRequestFullscreen();
+      }
+    };
+
+    requestFullscreen();
+  }, []);
 
   const handleTimeUp = useCallback(() => {
     completeExam();
@@ -40,50 +58,70 @@ export const Round2ExamScreen: React.FC = () => {
     getCurrentQuestionKey,
   } = useRound2ExamState();
 
-  const runCodingTests = useCallback((code: string, questionId: number): TestResult[] => {
+  const runCodingTests = useCallback(async (code: string, questionId: number): Promise<TestResult[]> => {
     const question = codingQuestions.find(q => q.id === questionId)!;
-    const results: TestResult[] = [];
-    question.visibleTestCases.forEach((testCase) => {
-      const passed = Math.random() > 0.3;
-      results.push({
-        passed,
-        input: testCase.input,
-        expected: testCase.expectedOutput,
-        actual: passed ? testCase.expectedOutput : 'undefined',
-        isHidden: false,
-      });
-    });
+    const testCases = question.visibleTestCases.map(tc => ({ input: tc.input, expected_output: tc.expectedOutput }));
+    // Add hidden test cases (mocking their structure for the API)
     for (let i = 0; i < question.hiddenTestCaseCount; i++) {
-      results.push({ passed: Math.random() > 0.4, isHidden: true });
+      testCases.push({ input: `hidden_input_${i}`, expected_output: `hidden_expected_${i}` });
     }
-    return results;
-  }, []);
 
-  const runSqlTests = useCallback((query: string): TestResult[] => {
-    const results: TestResult[] = [];
-    for (let i = 0; i < sqlQuestion.testCaseCount - sqlQuestion.hiddenTestCaseCount; i++) {
-      results.push({
-        passed: Math.random() > 0.3,
-        input: `Test case ${i + 1}`,
-        expected: '2 rows',
-        actual: Math.random() > 0.3 ? '2 rows' : '1 row',
+    try {
+      const response = await executeCode(code, question.language, testCases);
+      return response.map((res: any) => ({
+        passed: res.passed,
+        input: res.input,
+        expected: res.expected,
+        actual: res.actual,
+        isHidden: res.is_hidden,
+      }));
+    } catch (error) {
+      console.error("Error running coding tests:", error);
+      return question.visibleTestCases.map(tc => ({
+        passed: false,
+        input: tc.input,
+        expected: tc.expectedOutput,
+        actual: "Error during execution",
         isHidden: false,
-      });
+      }));
     }
-    for (let i = 0; i < sqlQuestion.hiddenTestCaseCount; i++) {
-      results.push({ passed: Math.random() > 0.4, isHidden: true });
-    }
-    return results;
   }, []);
 
-  const handleRun = useCallback(() => {
+  const runSqlTests = useCallback(async (query: string): Promise<TestResult[]> => {
+    const testCases = sqlQuestion.testCaseCount ? Array.from({ length: sqlQuestion.testCaseCount }, (_, i) => ({
+      input: `sql_test_input_${i}`,
+      expected_output: `sql_expected_output_${i}`,
+    })) : [];
+
+    try {
+      const response = await executeCode(query, 'sql', testCases);
+      return response.map((res: any) => ({
+        passed: res.passed,
+        input: res.input,
+        expected: res.expected,
+        actual: res.actual,
+        isHidden: res.is_hidden,
+      }));
+    } catch (error) {
+      console.error("Error running SQL tests:", error);
+      return sqlQuestion.testCaseCount ? Array.from({ length: sqlQuestion.testCaseCount }, (_, i) => ({
+        passed: false,
+        input: `Test case ${i + 1}`,
+        expected: 'Error during execution',
+        actual: 'Error during execution',
+        isHidden: false,
+      })) : [];
+    }
+  }, []);
+
+  const handleRun = useCallback(async () => {
     const questionKey = getCurrentQuestionKey();
     const code = examState.questions[questionKey].code;
     let results: TestResult[];
     if (examState.currentSection === 'sql') {
-      results = runSqlTests(code);
+      results = await runSqlTests(code);
     } else {
-      results = runCodingTests(code, examState.currentCodingQuestion);
+      results = await runCodingTests(code, examState.currentCodingQuestion);
     }
     runTests(questionKey, results);
   }, [examState, getCurrentQuestionKey, runCodingTests, runSqlTests, runTests]);

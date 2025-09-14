@@ -37,7 +37,6 @@ export const ExamLogin = () => {
     setMicPermission(microphone);
   }, []);
 
-  // Check if all conditions are met to enable exam start
   const isExamEnabled = isTimerComplete && cameraPermission === "granted" && micPermission === "granted";
 
   const handleStartExam = () => {
@@ -59,6 +58,8 @@ export const ExamLogin = () => {
       return;
     }
 
+    localStorage.setItem('candidateId', '1');
+
     const requestFullscreen = () => {
       const element = document.documentElement as any;
       if (element.requestFullscreen) {
@@ -74,14 +75,12 @@ export const ExamLogin = () => {
 
     requestFullscreen();
 
-    // Mock exam start - in real app, this would validate credentials and navigate
     toast({
       title: "Starting Exam",
       description: "Launching secure exam environment...",
       variant: "default",
     });
     
-    // Simulate navigation delay
     setTimeout(() => {
       navigate("/exam");
     }, 1500);
@@ -107,10 +106,8 @@ export const ExamLogin = () => {
         </CardHeader>
         
         <CardContent className="space-y-6">
-          {/* Exam Details Section */}
           <ExamDetails />
 
-          {/* Credential Inputs */}
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="userCode" className="text-sm font-medium">
@@ -157,17 +154,14 @@ export const ExamLogin = () => {
             </div>
           </div>
 
-          {/* Device Access Section */}
           <DeviceAccess onPermissionChange={handlePermissionChange} />
 
-          {/* Timer Section */}
           <ExamTimer 
             initialMinutes={0.1}
             onTimeUp={handleTimeUp}
             className="py-4"
           />
 
-          {/* Start Exam Button */}
           <Button
             onClick={handleStartExam}
             disabled={!isExamEnabled}

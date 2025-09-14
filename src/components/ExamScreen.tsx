@@ -6,27 +6,21 @@ import { SubmissionModal } from '@/components/SubmissionModal';
 import { ExamComplete } from '@/components/ExamComplete';
 import { useTimer } from '@/hooks/useTimer';
 import { useExamState } from '@/hooks/useExamState';
-import { examQuestions } from '@/data/questions';
+import { getQuestions, submitAnswers } from '@/lib/api';
+import { Question } from '@/types/exam';
 import { CameraPreview } from '@/components/CameraPreview';
 
 import { FullscreenExitModal } from '@/components/FullscreenExitModal';
 
 export const ExamScreen: React.FC = () => {
+  const [questions, setQuestions] = useState<Question[]>([]);
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
   const [showFullscreenExitModal, setShowFullscreenExitModal] = useState(false);
   const [isNavigatorCollapsed, setIsNavigatorCollapsed] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [examCompleted, setExamCompleted] = useState(false);
   const [completionReason, setCompletionReason] = useState<'submitted' | 'timeUp'>('submitted');
-  
-  const totalQuestions = examQuestions.length;
-
-  const handleTimeUp = useCallback(() => {
-    setCompletionReason('timeUp');
-    setExamCompleted(true);
-  }, []);
-
-  const { timer, formatTime, getTimerColor, stopTimer } = useTimer(25, handleTimeUp);
+  const [allowSecondRound, setAllowSecondRound] = useState(false);
 
   const {
     examState,
@@ -37,7 +31,41 @@ export const ExamScreen: React.FC = () => {
     submitExam,
     isQuestionAnswered,
     canGoNext,
-  } = useExamState(totalQuestions);
+  } = useExamState();
+
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      try {
+        const fetchedQuestions = await getQuestions(5);
+        const transformedQuestions = fetchedQuestions.map((q: any) => ({
+          id: q.question_id,
+          question: q.question_text,
+          options: q.options.map((opt: any) => ({
+            id: opt.option,
+            text: opt.option_text,
+          })),
+        }));
+        setQuestions(transformedQuestions);
+        if (transformedQuestions.length > 0) {
+          navigateToQuestion(transformedQuestions[0].id);
+        }
+      } catch (error) {
+        console.error("Failed to fetch questions:", error);
+        // Handle error appropriately
+      }
+    };
+    fetchQuestions();
+  }, [navigateToQuestion]);
+
+  const totalQuestions = questions.length;
+  const questionIds = questions.map(q => q.id);
+
+  const handleTimeUp = useCallback(() => {
+    setCompletionReason('timeUp');
+    setExamCompleted(true);
+  }, []);
+
+  const { timer, formatTime, getTimerColor, stopTimer } = useTimer(25, handleTimeUp);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -65,25 +93,28 @@ export const ExamScreen: React.FC = () => {
     };
   }, []);
 
+  const handleGoToNext = () => goToNext(questionIds);
+  const handleGoToPrevious = () => goToPrevious(questionIds);
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'ArrowLeft' && examState.currentQuestion > 1) {
-        goToPrevious();
-      } else if (event.key === 'ArrowRight' && canGoNext() && examState.currentQuestion < totalQuestions) {
-        goToNext();
-      } else if (event.key === 'Enter' && canGoNext() && examState.currentQuestion === totalQuestions) {
+      if (event.key === 'ArrowLeft') {
+        handleGoToPrevious();
+      } else if (event.key === 'ArrowRight' && canGoNext()) {
+        handleGoToNext();
+      } else if (event.key === 'Enter' && canGoNext() && examState.currentQuestion === questions[questions.length - 1]?.id) {
         setShowSubmissionModal(true);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [examState.currentQuestion, goToPrevious, goToNext, canGoNext, totalQuestions]);
+  }, [examState.currentQuestion, handleGoToPrevious, handleGoToNext, canGoNext, questions]);
 
-  const currentQuestion = examQuestions.find(q => q.id === examState.currentQuestion)!;
-  const selectedAnswer = examState.answers[examState.currentQuestion];
+  const currentQuestion = questions.find(q => q.id === examState.currentQuestion);
+  const selectedAnswer = examState.currentQuestion !== null ? examState.answers[examState.currentQuestion] : undefined;
   const answeredQuestions = new Set(Object.keys(examState.answers).map(Number));
-  
+
   const handleSubmit = () => {
     setShowSubmissionModal(true);
   };
@@ -106,12 +137,32 @@ export const ExamScreen: React.FC = () => {
     window.history.pushState(null, '', window.location.href);
   };
 
-  const confirmSubmit = () => {
+  const confirmSubmit = async () => {
     stopTimer();
-    submitExam();
-    setCompletionReason('submitted');
-    setExamCompleted(true);
-    setShowSubmissionModal(false);
+    const candidateId = localStorage.getItem('candidateId');
+    if (!candidateId) {
+        console.error("Candidate ID not found");
+        // Handle this error appropriately
+        return;
+    }
+    const submission = {
+        candidate_id: parseInt(candidateId, 10),
+        answers: Object.entries(examState.answers).map(([questionId, selected_option]) => ({
+            question_id: parseInt(questionId, 10),
+            selected_option: selected_option
+        }))
+    };
+    try {
+        const response = await submitAnswers(submission);
+        setAllowSecondRound(response.allow_to_second_round);
+        submitExam();
+        setCompletionReason('submitted');
+        setExamCompleted(true);
+        setShowSubmissionModal(false);
+    } catch (error) {
+        console.error("Failed to submit answers:", error);
+        // Handle error appropriately
+    }
   };
 
   const handleReEnterFullscreen = () => {
@@ -135,9 +186,16 @@ export const ExamScreen: React.FC = () => {
         totalQuestions={totalQuestions}
         timeTaken={calculateTimeTaken()}
         reason={completionReason}
+        allowSecondRound={allowSecondRound}
       />
     );
   }
+
+  if (!currentQuestion) {
+    return <div>Loading...</div>;
+  }
+
+  const currentQuestionIndex = questions.findIndex(q => q.id === examState.currentQuestion);
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col lg:flex-row">
@@ -156,20 +214,21 @@ export const ExamScreen: React.FC = () => {
 
         <QuestionArea
           question={currentQuestion}
+          questionNumber={currentQuestionIndex + 1}
           selectedAnswer={selectedAnswer}
-          onAnswerSelect={(optionId) => selectAnswer(examState.currentQuestion, optionId)}
+          onAnswerSelect={(optionId) => examState.currentQuestion !== null && selectAnswer(examState.currentQuestion, optionId)}
           canGoNext={canGoNext()}
-          canGoPrevious={examState.currentQuestion > 1}
-          isLastQuestion={examState.currentQuestion === totalQuestions}
-          onNext={goToNext}
-          onPrevious={goToPrevious}
+          canGoPrevious={currentQuestionIndex > 0}
+          isLastQuestion={currentQuestionIndex === totalQuestions - 1}
+          onNext={handleGoToNext}
+          onPrevious={handleGoToPrevious}
           onSubmit={handleSubmit}
         />
       </div>
 
       <div className="lg:w-2/5 lg:max-w-md">
         <QuestionNavigator
-          totalQuestions={totalQuestions}
+          questions={questions}
           currentQuestion={examState.currentQuestion}
           answeredQuestions={answeredQuestions}
           visitedQuestions={examState.visitedQuestions}
