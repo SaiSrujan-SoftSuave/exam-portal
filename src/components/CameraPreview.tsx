@@ -137,7 +137,7 @@ export const CameraPreview: React.FC = () => {
           lookAwayTimer.current = setTimeout(() => {
             console.log("Triggering capture for no face detected.");
             captureAndUploadImage();
-          }, 5000); // confirm no face after 5s
+          }, 3000); // confirm no face after 3s
         }
       }
     };
