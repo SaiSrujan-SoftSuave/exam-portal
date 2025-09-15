@@ -13,9 +13,9 @@ interface ExamDetailsProps {
 }
 
 export const ExamDetails = ({
-  examTitle = "Mathematics Final Exam",
-  duration = "120 minutes",
-  questionCount = 50,
+  examTitle = "Software Trainee Exam",
+  duration = "60 minutes",
+  questionCount = 15,
   allowedResources = ["Basic Calculator"],
   instructions = [
     "Camera and microphone must be enabled throughout the exam",

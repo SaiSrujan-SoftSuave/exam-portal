@@ -46,8 +46,17 @@ export const executeCode = async (code: string, language: string, test_cases: an
   return apiPost<any>('/compiler/execute_code', { code, language, test_cases });
 };
 
-export const uploadImage = async (imageDataUrl: string): Promise<void> => {
-  // The endpoint /api/upload-image is a placeholder.
-  // Replace it with your actual backend endpoint for storing images.
-  await apiPost('/api/upload-image', { image: imageDataUrl });
+export const uploadImage = async (imageFile: File): Promise<void> => {
+  const formData = new FormData();
+  formData.append('file', imageFile);
+  try {
+    await apiClient.post('/image/upload_image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  } catch (error) {
+    console.error("Image upload failed:", error);
+    throw error;
+  }
 };

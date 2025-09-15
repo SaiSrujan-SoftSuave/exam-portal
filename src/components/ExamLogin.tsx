@@ -101,7 +101,7 @@ export const ExamLogin = () => {
         <CardHeader className="text-center space-y-2 pb-4">
           <CardTitle className="text-2xl font-bold text-primary flex items-center justify-center gap-2">
             <GraduationCap className="h-6 w-6" />
-            Prepare for Your Exam
+            Soft Suave Exam
           </CardTitle>
         </CardHeader>
         
