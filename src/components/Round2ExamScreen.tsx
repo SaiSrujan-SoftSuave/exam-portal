@@ -19,25 +19,51 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { SubmissionModal } from '@/components/SubmissionModal';
+import { FullscreenExitModal } from '@/components/FullscreenExitModal';
 
 export const Round2ExamScreen: React.FC = () => {
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
+  const [showFullscreenExitModal, setShowFullscreenExitModal] = useState(false);
 
   useEffect(() => {
     const requestFullscreen = () => {
       const element = document.documentElement as any;
       if (element.requestFullscreen) {
         element.requestFullscreen();
-      } else if (element.mozRequestFullScreen) { /* Firefox */
-        element.mozRequestFullScreen();
-      } else if (element.webkitRequestFullscreen) { /* Chrome, Safari and Opera */
-        element.webkitRequestFullscreen();
-      } else if (element.msRequestFullscreen) { /* IE/Edge */
-        element.msRequestFullscreen();
       }
     };
 
     requestFullscreen();
+  }, []);
+
+  // Fullscreen Exit Modal
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      if (!document.fullscreenElement) {
+        setShowFullscreenExitModal(true);
+      }
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
+  // Back Button Popup
+  useEffect(() => {
+    const handlePopState = () => {
+      setShowSubmissionModal(true);
+    };
+
+    window.history.pushState(null, '', window.location.href);
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
   }, []);
 
   const handleTimeUp = useCallback(() => {
@@ -139,11 +165,21 @@ export const Round2ExamScreen: React.FC = () => {
     setShowSubmissionModal(true);
   }, []);
 
+  const handleCloseModal = () => {
+    setShowSubmissionModal(false);
+    window.history.pushState(null, '', window.location.href);
+  };
+
   const confirmSubmit = useCallback(() => {
     stopTimer();
     completeExam();
     setShowSubmissionModal(false);
   }, [stopTimer, completeExam]);
+
+  const handleReEnterFullscreen = () => {
+    document.documentElement.requestFullscreen();
+    setShowFullscreenExitModal(false);
+  };
 
   const getCurrentQuestion = () => {
     if (examState.currentSection === 'sql') return sqlQuestion;
@@ -176,6 +212,9 @@ export const Round2ExamScreen: React.FC = () => {
       </div>
     );
   }
+
+  const totalRound2Questions = codingQuestions.length + (sqlQuestion ? 1 : 0);
+  const answeredRound2Questions = Object.values(examState.questions).filter(q => q.isSubmitted).length;
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -216,7 +255,7 @@ export const Round2ExamScreen: React.FC = () => {
                 className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
                   examState.currentCodingQuestion === question.id
                     ? 'bg-gray-200 text-gray-800'
-                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
+                    : 'text-gray-600 text-gray-800 hover:bg-gray-100'
                 }`}
               >
                 Question {question.id}
@@ -284,6 +323,12 @@ export const Round2ExamScreen: React.FC = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <FullscreenExitModal
+        isOpen={showFullscreenExitModal}
+        onConfirm={confirmSubmit}
+        onCancel={handleReEnterFullscreen}
+      />
     </div>
   );
 };

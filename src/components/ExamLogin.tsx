@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, GraduationCap, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,15 +13,29 @@ import academicBackground from "@/assets/academic-background.jpg";
 
 type PermissionStatus = "not-requested" | "granted" | "denied" | "requesting";
 
-export const ExamLogin = () => {
+interface ExamLoginProps {
+  userCode?: string;
+  passcode?: string;
+}
+
+export const ExamLogin = ({ userCode: initialUserCode, passcode: initialPasscode }: ExamLoginProps) => {
   const navigate = useNavigate();
-  const [userCode, setUserCode] = useState("");
-  const [passcode, setPasscode] = useState("");
+  const [userCode, setUserCode] = useState(initialUserCode || "");
+  const [passcode, setPasscode] = useState(initialPasscode || "");
   const [showPasscode, setShowPasscode] = useState(false);
   const [isTimerComplete, setIsTimerComplete] = useState(false);
   const [cameraPermission, setCameraPermission] = useState<PermissionStatus>("not-requested");
   const [micPermission, setMicPermission] = useState<PermissionStatus>("not-requested");
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (initialUserCode) {
+      setUserCode(initialUserCode);
+    }
+    if (initialPasscode) {
+      setPasscode(initialPasscode);
+    }
+  }, [initialUserCode, initialPasscode]);
 
   const handleTimeUp = useCallback(() => {
     setIsTimerComplete(true);
@@ -58,7 +72,7 @@ export const ExamLogin = () => {
       return;
     }
 
-    localStorage.setItem('candidateId', '1');
+    
 
     const requestFullscreen = () => {
       const element = document.documentElement as any;
